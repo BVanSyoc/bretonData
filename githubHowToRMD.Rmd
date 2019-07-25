@@ -1,0 +1,29 @@
+---
+title: "githubHowTo"
+output: html_document
+---
+#QUICK Github setup guide
+
+1. Open your "Data" project in R Studio
+2. To open a script:  click on the Github button in the tool bar and click "Pull branches"  - *this will refresh anyone else's changes*
+3. Open your files under the "File" tab like usual
+
+#### To save something to github
+
+1. Save it locally first (as an .R file, for example)
+2. Click on the Github button in the tool bar and click "commit"
+3. In the commit window, select the file you are uploading
+4. Type in commit message and hit "commit"
+5. Click "push branches" 
+
+#### To read in data from github
+
+1. Your data has to be uploaded to github (see above)
+2. On the Github website, click on the link to your data and select "View raw"
+3. Copy the URL of the data and paste into the read.table function
+
+```{r}
+## example
+testDF <- read.table("https://raw.githubusercontent.com/EmilyB17/grazing_soil_microbes/master/data/2017pH.txt", sep = "\t", header = TRUE)
+```
+
