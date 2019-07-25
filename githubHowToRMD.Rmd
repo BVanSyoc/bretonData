@@ -19,11 +19,12 @@ output: html_document
 #### To read in data from github
 
 1. Your data has to be uploaded to github (see above)
-2. On the Github website, click on the link to your data and select "View raw"
+2. On the Github website, click on the link to your data and select "raw"
 3. Copy the URL of the data and paste into the read.table function
 
 ```{r}
 ## example
 testDF <- read.table("https://raw.githubusercontent.com/EmilyB17/grazing_soil_microbes/master/data/2017pH.txt", sep = "\t", header = TRUE)
+# NOTE that it ends with ".txt", not ".com", etc.
 ```
 
