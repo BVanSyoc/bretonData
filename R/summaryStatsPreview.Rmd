@@ -1,0 +1,14 @@
+---
+title: "Summary Stats Preview"
+author: "Breton Van Syoc and Emily Bean"
+date: "August 6, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Energy expenditure quantification
+
+Summary showing lean VO2 for kettlebells and real runner.
