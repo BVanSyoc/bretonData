@@ -2,13 +2,277 @@
 title: "Summary Stats Preview"
 author: "Breton Van Syoc and Emily Bean"
 date: "August 6, 2019"
-output: html_document
+output:
+  html_document: default
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+```{r }
+library(tidyr)
+library(dplyr)
+library(knitr)
+library(rmcorr)
+library(ggplot2)
+kb <- read.table("https://raw.githubusercontent.com/BVanSyoc/bretonData/master/data/kbAll_wAgeCats.txt", sep = "\t", header = TRUE)
+
+rr <- read.table("https://raw.githubusercontent.com/BVanSyoc/bretonData/master/data/rrAll_wAgeCats.txt", sep = "\t", header = TRUE)
+
 ```
 
-### Energy expenditure quantification
+## Energy expenditure quantification
 
-Summary showing lean VO2 for kettlebells and real runner.
+Kettlebells
+
+```{r }
+kbsumStats <- kb %>% 
+  mutate(Sex = factor(Sex),
+         Participant = factor(Participant))%>% 
+  group_by(Sex) %>% 
+  summarize(n = length(unique(Participant)),
+            avgLeanVO2 = round(mean(KB_VO2_Lean), 3),
+            sdLeanVO2 = round(sd(KB_VO2_Lean), 3),
+            nage18to29 = length(which(ageCats %in% "18 to 29")) / 10,
+            nage30to39 = length(which(ageCats %in% "30 to 39")) / 10,
+            nage40to49 = length(which(ageCats %in% "40 to 49")) / 10)
+kbsumStats <- data.frame(kbsumStats)
+knitr::kable(kbsumStats)
+```
+
+Real runner
+
+```{r}
+rrsumStats <- rr %>% 
+  filter(!Bout == 1) %>% 
+  mutate(Sex = factor(Sex),
+         Participant = factor(Participant)) %>% 
+  group_by(Sex) %>% 
+  summarize(n = length(unique(Participant)),
+            avgLeanVO2 = round(mean(RR_VO2_Lean), 3),
+            sdLeanVO2 = round(sd(RR_VO2_Lean), 3), 
+            nage18to29 = length(which(ageCats %in% "18 to 29")) / 8,
+            nage30to39 = length(which(ageCats %in% "30 to 39")) / 8,
+            nage40to49 = length(which(ageCats %in% "40 to 49")) / 8)
+rrsumStats <- data.frame(rrsumStats)
+knitr::kable(rrsumStats)
+```
+
+### ANOVA by Bout
+
+Kettlebells
+
+```{r}
+# kettlebell ANOVA
+kb$Bout <- factor(kb$Bout)
+kbMod <- aov(KB_VO2_Lean ~ Bout, data = kb)
+
+summary(kbMod)
+```
+
+Tukey test shows significance between all bouts and bout 1
+```{r}
+# kettlebell Tukey test
+(TukeyHSD(kbMod, conf.level = 0.95))
+```
+
+Real Runner
+
+```{r}
+# real runner ANOVA
+rr$Bout <- factor(rr$Bout)
+rrMod <- aov(RR_VO2_Lean ~ Bout, data = rr)
+
+summary(rrMod)
+```
+Tukey test is significant between everything and bout 1, and 6, 7, 8, and bout 2
+```{r}
+# real runner Tukey test
+(TukeyHSD(rrMod, conf.level = 0.95))
+```
+
+### t Test by Sex
+
+Kettlebell
+
+```{r}
+t.test(KB_VO2_Lean ~ Sex, data = kb)
+```
+
+Real runner
+```{r}
+t.test(RR_VO2_Lean ~ Sex, data = rr)
+```
+
+### ANOVA separated by Sex
+
+Kettlebell - males
+```{r}
+# ANOVA for males
+kbModM <- aov(KB_VO2_Lean ~ Bout, data = filter(kb, Sex == "M"))
+
+summary(kbModM)
+```
+
+```{r}
+# Tukey 
+(TukeyHSD(kbModM, conf.level = 0.95))
+```
+
+Kettlebell - females
+```{r}
+# ANOVA for females
+kbModF <- aov(KB_VO2_Lean ~ Bout, data = filter(kb, Sex == "F"))
+
+summary(kbModF)
+```
+
+```{r}
+# Tukey
+(TukeyHSD(kbModF, conf.level = 0.95))
+```
+
+Real runner - Males
+```{r}
+# ANOVA
+rrModM <- aov(RR_VO2_Lean ~ Bout, data = filter(rr, Sex == "M"))
+
+summary(rrModM)
+```
+
+```{r}
+# Tukey
+(TukeyHSD(rrModM, conf.level = 0.95))
+```
+
+Real runner - Females
+```{r}
+# ANOVA
+rrModF <- aov(RR_VO2_Lean ~ Bout, data = filter(rr, Sex == "F"))
+
+summary(rrModF)
+```
+
+```{r}
+#Tukey
+(TukeyHSD(rrModF, conf.level = 0.95))
+```
+
+### t Test by Sex, removing Bouts
+
+Kettlebell - removing bout 1
+```{r}
+# filter data
+kbNoBout1 <- kb %>% filter(!Bout == 1)
+
+# t test
+t.test(KB_VO2_Lean ~ Sex, data = kbNoBout1)
+```
+
+Real runner - removing bout 1
+
+```{r}
+# filter data
+rrNoBout1 <- rr %>% filter(!Bout == 1)
+
+# t test
+t.test(RR_VO2_Lean ~ Sex, data = rrNoBout1)
+```
+
+Kettlebells - removing bout 1 and 2
+
+```{r}
+# filter data
+kbNoBout1and2 <- kb %>% filter(!Bout == c(1, 2))
+
+t.test(KB_VO2_Lean ~ Sex, data = kbNoBout1and2)
+```
+
+Real runner - removing bout 1 and 2
+
+```{r}
+# filter data
+rrNoBout1and2 <- rr %>% filter(!Bout == c(1, 2))
+
+# t.test
+t.test(RR_VO2_Lean ~ Sex, data = rrNoBout1and2)
+```
+
+## Validate HR and RPE
+
+### repeated measures correlation
+
+Kettlebells
+```{r}
+kb$Participant <- factor(kb$Participant)
+kbrmc <- rmcorr(participant = Participant,
+                measure1 = KB_HR,
+                measure2 = KB_RPE, 
+                dataset = kb,
+                CIs = "analytic")
+kbrmc
+```
+
+```{r}
+#plot
+ggplot(kb, aes(x = KB_HR, y = KB_RPE, group = Participant, color = Participant, scales = "free")) +
+  geom_point() +
+  geom_line(aes(y = kbrmc$model$fitted.values), linetype = 1) +
+  theme_bw()
+```
+
+Real runner
+```{r}
+rr$Participant <- factor(rr$Participant)
+rrrmc <- rmcorr(participant = Participant,
+                measure1 = RR_HR,
+                measure2 = RR_RPE, 
+                dataset = rr,
+                CIs = "analytic")
+rrrmc
+```
+
+```{r}
+# plot
+ggplot(rr, aes(x = RR_HR, y = RR_RPE, group = Participant, color = Participant, scales = "free")) +
+  geom_point() +
+  geom_line(aes(y = rrrmc$model$fitted.values), linetype = 1) +
+  theme_bw() 
+```
+
+### Bland-Altman plots
+
+Kettlebells
+
+```{r}
+
+# make columns for the means and differences
+kbBA <- kb %>% 
+  mutate(RPE10 = KB_RPE * 10,
+         avgHRRPE = (KB_HR + RPE10) / 2,
+         diff = KB_HR - RPE10)
+
+plot(x = kbBA$avgHRRPE, y = kbBA$diff, main = "Bland Altman: kettlebells")
+abline(h = mean(kbBA$diff), col = "red")
+abline(h = mean(kbBA$diff) + 2*sd(kbBA$diff), col = "blue")
+abline(h = mean(kbBA$diff) - 2*sd(kbBA$diff), col = "blue")
+text(x = 100, y = 80, label = paste0("mean: ", round(mean(kbBA$diff), 2)))
+text(x = 110, y = 0, labels = paste0("CIHigh: ", round(mean(kbBA$diff) + 2*sd(kbBA$diff), 2)))
+text(x = 110, y = -10, labels = paste0("CILow:", round(mean(kbBA$diff) - 2*sd(kbBA$diff), 2)))
+```
+
+
+Real runner
+```{r}
+rrBA <- rr %>% 
+  mutate(RPE10 = RR_RPE * 10,
+         avgHRRPE = (RR_HR + RPE10) /2,
+         diff = RR_HR - RPE10)
+
+plot(x = rrBA$avgHRRPE, y = rrBA$diff, main = "Bland Altman: real runner")
+abline(h = mean(rrBA$diff), col = "red")
+abline(h = mean(rrBA$diff) + 2*sd(rrBA$diff), col = "blue")
+abline(h = mean(rrBA$diff) - 2*sd(rrBA$diff), col = "blue")
+text(x = 90, y = 90, label = paste0("mean: ", round(mean(rrBA$diff), 2)))
+text(x = 90, y = 0, labels = paste0("CIHigh: ", round(mean(rrBA$diff) + 2*sd(rrBA$diff), 2)))
+text(x = 90, y = -10, labels = paste0("CILow:", round(mean(rrBA$diff) - 2*sd(rrBA$diff), 2)))
+```
+
