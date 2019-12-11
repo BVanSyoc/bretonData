@@ -3,6 +3,7 @@ title: "Summary Stats Preview"
 author: "Breton Van Syoc and Emily Bean"
 date: "August 6, 2019"
 output:
+  pdf_document: default
   html_document: default
 ---
 
@@ -38,12 +39,30 @@ kbsumStats <- data.frame(kbsumStats)
 knitr::kable(kbsumStats)
 ```
 
+VO2 instead of lean VO2
+
+```{r}
+## NORMAL VO2
+kbsumStats <- kb %>% 
+  mutate(Sex = factor(Sex),
+         Participant = factor(Participant))%>% 
+  group_by(Sex) %>% 
+  summarize(n = length(unique(Participant)),
+            avgVO2 = round(mean(KB_VO2), 3),
+            sdVO2 = round(sd(KB_VO2), 3),
+            nage18to29 = length(which(ageCats %in% "18 to 29")) / 10,
+            nage30to39 = length(which(ageCats %in% "30 to 39")) / 10,
+            nage40to49 = length(which(ageCats %in% "40 to 49")) / 10)
+kbsumStats <- data.frame(kbsumStats)
+knitr::kable(kbsumStats)
+```
+
+
 Real runner
 
 ```{r}
 rrsumStats <- rr %>% 
-  filter(!Bout == 1) %>% 
-  mutate(Sex = factor(Sex),
+    mutate(Sex = factor(Sex),
          Participant = factor(Participant)) %>% 
   group_by(Sex) %>% 
   summarize(n = length(unique(Participant)),
@@ -56,6 +75,33 @@ rrsumStats <- data.frame(rrsumStats)
 knitr::kable(rrsumStats)
 ```
 
+VO2
+
+```{r}
+rrsumStats <- rr %>% 
+    mutate(Sex = factor(Sex),
+         Participant = factor(Participant)) %>% 
+  group_by(Sex) %>% 
+  summarize(n = length(unique(Participant)),
+            avgVO2 = round(mean(RR_VO2), 3),
+            sdVO2 = round(sd(RR_VO2), 3), 
+            nage18to29 = length(which(ageCats %in% "18 to 29")) / 8,
+            nage30to39 = length(which(ageCats %in% "30 to 39")) / 8,
+            nage40to49 = length(which(ageCats %in% "40 to 49")) / 8)
+rrsumStats <- data.frame(rrsumStats)
+knitr::kable(rrsumStats)
+```
+### Pearson correlation
+
+```{r}
+## KETTLEBELL
+kbCor <- cor.test(kb$KB_HR, kb$KB_RPE, method = "pearson")
+
+## RR
+rrCor <- cor.test(rr$RR_HR, rr$RR_RPE, method = "pearson")
+```
+
+
 ### ANOVA by Bout
 
 Kettlebells
@@ -63,7 +109,7 @@ Kettlebells
 ```{r}
 # kettlebell ANOVA
 kb$Bout <- factor(kb$Bout)
-kbMod <- aov(KB_VO2_Lean ~ Bout, data = kb)
+kbMod <- aov(KB_VO2 ~ Bout, data = kb)
 
 summary(kbMod)
 ```
@@ -74,12 +120,30 @@ Tukey test shows significance between all bouts and bout 1
 (TukeyHSD(kbMod, conf.level = 0.95))
 ```
 
+VO2 Kettle Bell
+
+```{r}
+# kettlebell ANOVA
+kb$Bout <- factor(kb$Bout)
+kbMod <- aov(KB_VO2 ~ Bout, data = kb)
+
+summary(kbMod)
+```
+
+Tukey VO2 KB
+
+```{r}
+# kettlebell Tukey test
+(TukeyHSD(kbMod, conf.level = 0.95))
+```
+
+
 Real Runner
 
 ```{r}
 # real runner ANOVA
 rr$Bout <- factor(rr$Bout)
-rrMod <- aov(RR_VO2_Lean ~ Bout, data = rr)
+rrMod <- aov(RR_VO2 ~ Bout, data = rr)
 
 summary(rrMod)
 ```
@@ -89,6 +153,43 @@ Tukey test is significant between everything and bout 1, and 6, 7, 8, and bout 2
 (TukeyHSD(rrMod, conf.level = 0.95))
 ```
 
+VO2 RR Anova
+
+```{r}
+# real runner ANOVA
+rr$Bout <- factor(rr$Bout)
+rrMod <- aov(RR_VO2 ~ Bout, data = rr)
+
+summary(rrMod)
+```
+
+
+Tukey test V02 RR
+
+```{r}
+# real runner Tukey test
+(TukeyHSD(rrMod, conf.level = 0.95))
+```
+
+##### ANOVA for HR and RPE by Bout
+
+Kettlebell
+```{r}
+kbhr <- aov(KB_HR ~ Bout, data = kb)
+kbrpe <- aov(KB_RPE ~ Bout, data = kb)
+
+(TukeyHSD(kbhr))
+(TukeyHSD(kbrpe))
+```
+```{r}
+rrhr <- aov(RR_HR ~ Bout, data = rr)
+rrrpe <- aov(RR_RPE ~ Bout, data = rr)
+
+(TukeyHSD(rrhr))
+(TukeyHSD(rrrpe))
+```
+#### above rr by bout hr and RPE
+
 ### t Test by Sex
 
 Kettlebell
@@ -97,17 +198,30 @@ Kettlebell
 t.test(KB_VO2_Lean ~ Sex, data = kb)
 ```
 
+
+KBVO2 ttest
+
+```{r}
+t.test(KB_VO2 ~ Sex, data = kb)
+```
+
 Real runner
 ```{r}
 t.test(RR_VO2_Lean ~ Sex, data = rr)
 ```
+
+RR VO2 ttest
+```{r}
+t.test(RR_VO2 ~ Sex, data = rr)
+```
+
 
 ### ANOVA separated by Sex
 
 Kettlebell - males
 ```{r}
 # ANOVA for males
-kbModM <- aov(KB_VO2_Lean ~ Bout, data = filter(kb, Sex == "M"))
+kbModM <- aov(KB_VO2 ~ Bout, data = filter(kb, Sex == "M"))
 
 summary(kbModM)
 ```
@@ -120,7 +234,7 @@ summary(kbModM)
 Kettlebell - females
 ```{r}
 # ANOVA for females
-kbModF <- aov(KB_VO2_Lean ~ Bout, data = filter(kb, Sex == "F"))
+kbModF <- aov(KB_VO2 ~ Bout, data = filter(kb, Sex == "F"))
 
 summary(kbModF)
 ```
@@ -133,7 +247,7 @@ summary(kbModF)
 Real runner - Males
 ```{r}
 # ANOVA
-rrModM <- aov(RR_VO2_Lean ~ Bout, data = filter(rr, Sex == "M"))
+rrModM <- aov(RR_VO2 ~ Bout, data = filter(rr, Sex == "M"))
 
 summary(rrModM)
 ```
@@ -146,7 +260,7 @@ summary(rrModM)
 Real runner - Females
 ```{r}
 # ANOVA
-rrModF <- aov(RR_VO2_Lean ~ Bout, data = filter(rr, Sex == "F"))
+rrModF <- aov(RR_VO2 ~ Bout, data = filter(rr, Sex == "F"))
 
 summary(rrModF)
 ```
@@ -167,6 +281,16 @@ kbNoBout1 <- kb %>% filter(!Bout == 1)
 t.test(KB_VO2_Lean ~ Sex, data = kbNoBout1)
 ```
 
+kb VO2 - removing bout one
+
+```{r}
+# filter data
+kbNoBout1 <- kb %>% filter(!Bout == 1)
+
+# t test
+t.test(KB_VO2 ~ Sex, data = kbNoBout1)
+```
+
 Real runner - removing bout 1
 
 ```{r}
@@ -176,6 +300,17 @@ rrNoBout1 <- rr %>% filter(!Bout == 1)
 # t test
 t.test(RR_VO2_Lean ~ Sex, data = rrNoBout1)
 ```
+
+RR VO2 Removing bout 1
+
+```{r}
+# filter data
+rrNoBout1 <- rr %>% filter(!Bout == 1)
+
+# t test
+t.test(RR_VO2 ~ Sex, data = rrNoBout1)
+```
+
 
 Kettlebells - removing bout 1 and 2
 
@@ -213,10 +348,13 @@ kbrmc
 
 ```{r}
 #plot
-ggplot(kb, aes(x = KB_HR, y = KB_RPE, group = Participant, color = Participant, scales = "free")) +
+ggplot(kb, aes(x = KB_HR, y = KB_RPE, group = Participant, color = Participant,scales = "free")) +
   geom_point() +
   geom_line(aes(y = kbrmc$model$fitted.values), linetype = 1) +
-  theme_bw()
+  theme_bw() +
+  labs(x = "Heart Rate", y = "RPE") +
+  scale_y_continuous(breaks = c(5, 7, 9, 11, 13, 15, 17, 19, 21), 
+                     minor_breaks = c(6, 8, 10, 12, 14, 16, 18, 20))
 ```
 
 Real runner
@@ -232,10 +370,13 @@ rrrmc
 
 ```{r}
 # plot
-ggplot(rr, aes(x = RR_HR, y = RR_RPE, group = Participant, color = Participant, scales = "free")) +
+ggplot(rr, aes(x = RR_HR, y = RR_RPE, group = Participant, color = Participant,scales = "free")) +
   geom_point() +
   geom_line(aes(y = rrrmc$model$fitted.values), linetype = 1) +
-  theme_bw() 
+  theme_bw() +
+  labs(x = "Heart Rate", y = "RPE") +
+  scale_y_continuous(breaks = c(5, 7, 9, 11, 13, 15, 17, 19, 21), 
+                     minor_breaks = c(6, 8, 10, 12, 14, 16, 18, 20))
 ```
 
 ### Bland-Altman plots
@@ -246,6 +387,7 @@ Kettlebells
 
 # make columns for the means and differences
 kbBA <- kb %>% 
+  filter(!Bout == 1) %>% 
   mutate(RPE10 = KB_RPE * 10,
          avgHRRPE = (KB_HR + RPE10) / 2,
          diff = KB_HR - RPE10)
@@ -257,6 +399,23 @@ abline(h = mean(kbBA$diff) - 2*sd(kbBA$diff), col = "blue")
 text(x = 100, y = 80, label = paste0("mean: ", round(mean(kbBA$diff), 2)))
 text(x = 110, y = 0, labels = paste0("CIHigh: ", round(mean(kbBA$diff) + 2*sd(kbBA$diff), 2)))
 text(x = 110, y = -10, labels = paste0("CILow:", round(mean(kbBA$diff) - 2*sd(kbBA$diff), 2)))
+
+## ggplot
+ggplot(data = kbBA, aes(x = avgHRRPE, y = diff)) +
+  geom_point() +
+  geom_hline(yintercept = mean(kbBA$diff), col = "red") +
+  geom_hline(yintercept = mean(kbBA$diff) + 2*sd(kbBA$diff), col = "blue") +
+  geom_hline(yintercept = mean(kbBA$diff) - 2*sd(kbBA$diff), col = "blue") +
+  theme_classic() +
+  labs(x = "Mean HR (bpm)", y = "Difference HR (bpm)") +
+  geom_text(aes(x = 100, y = 14 ,
+                label = paste0("mean: ", round(mean(kbBA$diff), 2))), 
+            size = 3.5)+
+  scale_x_continuous(breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210))
+  #geom_text(aes(x = 100, y = 0, label = paste0("SD: ", round(mean(kbBA$diff) - 2*sd(kbBA$diff), 2),
+                                        #        ", ", #round(mean(kbBA$diff) + 2*sd(kbBA$diff), 2))),
+            #size= 3.5)
+  
 ```
 
 
@@ -274,5 +433,85 @@ abline(h = mean(rrBA$diff) - 2*sd(rrBA$diff), col = "blue")
 text(x = 90, y = 90, label = paste0("mean: ", round(mean(rrBA$diff), 2)))
 text(x = 90, y = 0, labels = paste0("CIHigh: ", round(mean(rrBA$diff) + 2*sd(rrBA$diff), 2)))
 text(x = 90, y = -10, labels = paste0("CILow:", round(mean(rrBA$diff) - 2*sd(rrBA$diff), 2)))
+
+## ggplot
+ggplot(data = rrBA, aes(x = avgHRRPE, y = diff)) +
+  geom_point() +
+  geom_hline(yintercept = mean(rrBA$diff), col = "red") +
+  geom_hline(yintercept = mean(rrBA$diff) + 2*sd(rrBA$diff), col = "blue") +
+  geom_hline(yintercept = mean(rrBA$diff) - 2*sd(rrBA$diff), col = "blue") +
+  theme_classic() +
+  labs(x = "Mean HR (bpm)", y = "Difference HR (bpm)") +
+  geom_text(aes(x = 95, y = 14 ,
+                label = paste0("mean: ", round(mean(rrBA$diff), 2))), 
+            size = 3.5)+
+  scale_x_continuous(breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210))
+  #geom_text(aes(x = 95, y = 0, label = paste0("SD: ", round(mean(rrBA$diff) - 2*sd(rrBA$diff), 2),
+     #                                          ", ", #round(mean(rrBA$diff) + 2*sd(rrBA$diff), 2))),
+           # size= 3.5)
+```
+
+# Re-worked RMCORR figure
+
+New plot
+```{r}
+## PLOT: HR on x, RPE on y, each participant with their own slope
+# add rmcorr r2 = 0.7988749
+# add the overall regression line
+
+regkb <- lm(KB_RPE ~ KB_HR, data = kb)
+
+ggplot(data = kb, aes(x = KB_HR, y = KB_RPE, group = Participant, color = Participant)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  geom_abline(intercept = mean(outDFkb$intercept), slope = mean(outDFkb$slope), color = "black", size = 1.5) +
+  theme_classic() 
+
+```
+
+Table showing individual r2
+```{r}
+
+# save individual slopes to a table
+
+partkb <- unique(kb$Participant)
+outDFkb <- data.frame()
+for(i in 1:length(partkb)) {
+  mod <- lm(KB_RPE ~ KB_HR, data = filter(kb, Participant == partkb[i]))
+  outDFkb[i, "Participant"] <- as.numeric(partkb[i])
+  outDFkb[i, "slope"] <- round(mod[1]$coefficients[2], 3)
+  outDFkb[i, "intercept"] <- round(mod[1]$coefficients[1], 3)
+  outDFkb[i, "rsq"] <- round(summary(mod)$r.squared, 3)
+}
+
+knitr::kable(outDFkb)
+```
+
+```{r}
+## PLOT: HR on x, RPE on y, each participant with their own slope
+# add rmcorr r = 0.7823804
+# add the overall regression line
+
+regrr <- lm(RR_RPE ~ RR_HR, data = rr)
+
+ggplot(data = rr, aes(x = RR_HR, y = RR_RPE, group = Participant, color = Participant)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  geom_abline(intercept = mean(outDFrr$intercept), slope = mean(outDFrr$slope), color = "black", size = 1.5) +
+  theme_classic() 
+
+```
+
+```{r}
+partrr <- unique(rr$Participant)
+outDFrr <- data.frame()
+for(i in 1:length(partrr)) {
+  mod <- lm(RR_RPE ~ RR_HR, data = filter(rr, Participant == partrr[i]))
+  outDFrr[i, "Participant"] <- as.numeric(part[i])
+  outDFrr[i, "slope"] <- round(mod[1]$coefficients[2], 3)
+  outDFrr[i, "intercept"] <- round(mod[1]$coefficients[1], 3)
+  outDFrr[i, "rsq"] <- round(summary(mod)$r.squared, 3)
+}  
+knitr::kable(outDFrr)
 ```
 
